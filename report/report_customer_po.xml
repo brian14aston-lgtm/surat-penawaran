@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_customer_po">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-family: Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.3;">
+                        <style>
+                            .o_standard_footer, .o_background_footer, .o_boxed_footer, .o_clean_footer,
+                            div.footer, .o_report_layout_standard > .footer,
+                            div[class*="o_standard_footer"], .o_footer { display: none !important; }
+                            table.po-table, table.po-table th, table.po-table td {
+                                border: 1px solid #000 !important;
+                                border-collapse: collapse;
+                            }
+                            .checkbox-box {
+                                display: inline-block;
+                                width: 14px;
+                                height: 14px;
+                                border: 1px solid #000;
+                                text-align: center;
+                                line-height: 12px;
+                                font-weight: bold;
+                                font-size: 10px;
+                            }
+                        </style>
+                        <div class="oe_structure"/>
+
+                        <!-- Header Information -->
+                        <table class="table table-sm table-borderless mb-2" style="width: 100%; font-size: 11px;">
+                            <tr>
+                                <td style="width: 10%; padding: 1px 0;">Hal</td>
+                                <td style="width: 2%; padding: 1px 0;">:</td>
+                                <td style="padding: 1px 0;" class="fw-bold">
+                                    PURCHASE ORDER (PO)
+                                    <t t-if="doc.name">
+                                        / NO. <span t-field="doc.name"/>
+                                    </t>
+                                    <t t-else="">
+                                        / NO. ____________________
+                                    </t>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 1px 0;">Tempat</td>
+                                <td style="padding: 1px 0;">:</td>
+                                <td style="padding: 1px 0;"><span t-field="doc.place"/></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 1px 0;">Tanggal</td>
+                                <td style="padding: 1px 0;">:</td>
+                                <td style="padding: 1px 0;"><span t-field="doc.date_order"/></td>
+                            </tr>
+                        </table>
+
+                        <!-- Kepada -->
+                        <div class="mb-2" style="font-size: 11px;">
+                            <div>Kepada :</div>
+                            <div class="fw-bold"><span t-field="doc.company_id.name"/></div>
+                            <div>
+                                <t t-if="doc.company_id.street"><span t-field="doc.company_id.street"/>, </t>
+                                <t t-if="doc.company_id.street2"><span t-field="doc.company_id.street2"/>, </t>
+                                <t t-if="doc.company_id.city"><span t-field="doc.company_id.city"/>, </t>
+                                <t t-if="doc.company_id.state_id"><span t-field="doc.company_id.state_id.name"/> </t>
+                                <t t-if="doc.company_id.zip"><span t-field="doc.company_id.zip"/></t>
+                            </div>
+                        </div>
+
+                        <!-- Bertandatangan di bawah ini -->
+                        <div class="mb-2" style="font-size: 11px;">
+                            <div>Dengan ini, saya yang bertandatangan di bawah ini :</div>
+                            <table class="table table-sm table-borderless mb-0" style="width: 100%; margin-left: 10px;">
+                                <tr>
+                                    <td style="width: 18%; padding: 1px 0;">Nama Lengkap</td>
+                                    <td style="width: 2%; padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;"><span t-field="doc.signer_name"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 1px 0;">Jabatan</td>
+                                    <td style="padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;"><span t-field="doc.signer_job"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 1px 0;">No. Handphone</td>
+                                    <td style="padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;"><span t-field="doc.signer_mobile"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 1px 0;">Alamat E - mail</td>
+                                    <td style="padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;"><span t-field="doc.signer_email"/></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Instansi -->
+                        <div class="mb-2" style="font-size: 11px;">
+                            <div>Secara sah dan berwenang bertindak untuk dan atas nama instansi tempat saya bekerja yaitu :</div>
+                            <table class="table table-sm table-borderless mb-0" style="width: 100%; margin-left: 10px;">
+                                <tr>
+                                    <td style="width: 18%; padding: 1px 0;">Nama</td>
+                                    <td style="width: 2%; padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;" class="fw-bold"><span t-field="doc.instansi_name"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 1px 0;">Alamat</td>
+                                    <td style="padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;"><span t-field="doc.instansi_address"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 1px 0;">Nomer Telepon</td>
+                                    <td style="padding: 1px 0;">:</td>
+                                    <td style="padding: 1px 0;"><span t-field="doc.instansi_phone"/></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="mb-2" style="font-size: 11px;">
+                            untuk melakukan pembelian barang kepada <span class="fw-bold" t-field="doc.company_id.name"/> dengan rincian sebagai berikut :
+                        </div>
+
+                        <!-- Product Table -->
+                        <table class="table table-sm po-table mb-1" style="width: 100%; font-size: 11px;">
+                            <thead>
+                                <tr class="text-center align-middle" style="background-color: #f2f2f2;">
+                                    <th style="width: 6%; padding: 4px;">NO.</th>
+                                    <th style="width: 18%; padding: 4px;">KODE PRODUK</th>
+                                    <th style="width: 46%; padding: 4px;">NAMA PRODUK</th>
+                                    <th style="width: 12%; padding: 4px;">HARGA</th>
+                                    <th style="width: 6%; padding: 4px;">QTY</th>
+                                    <th style="width: 12%; padding: 4px;">JUMLAH</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.line_ids" t-as="line">
+                                    <tr>
+                                        <td class="text-center" style="padding: 4px;"><t t-esc="line_index + 1"/></td>
+                                        <td style="padding: 4px;"><span t-field="line.product_code"/></td>
+                                        <td style="padding: 4px;"><span t-field="line.name"/></td>
+                                        <td class="text-end" style="padding: 4px;">
+                                            <span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                        </td>
+                                        <td class="text-center" style="padding: 4px;">
+                                            <span t-field="line.product_qty"/>
+                                        </td>
+                                        <td class="text-end" style="padding: 4px;">
+                                            <span t-field="line.price_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </t>
+                                <tr class="fw-bold" style="background-color: #f2f2f2;">
+                                    <td colspan="5" class="text-center" style="padding: 4px;">TOTAL</td>
+                                    <td class="text-end" style="padding: 4px;">
+                                        <span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Terbilang -->
+                        <div class="mb-3" style="font-size: 11px;">
+                            Terbilang : <span t-field="doc.amount_total_words"/>
+                        </div>
+
+                        <!-- Terms & Conditions Section -->
+                        <div class="mb-2" style="font-size: 11px;">
+                            <div class="fw-bold mb-1">Menyetujui Ketentuan :</div>
+                            <table class="table table-sm table-borderless mb-2" style="width: 100%;">
+                                <tr>
+                                    <td style="width: 22%; padding: 2px 0;">Pelunasan Pembayaran*</td>
+                                    <td style="width: 2%; padding: 2px 0;">:</td>
+                                    <td style="padding: 2px 0;">
+                                        <span t-field="doc.payment_term_desc"/>
+                                        <t t-if="doc.payment_due_date">
+                                            / Tanggal : <span t-field="doc.payment_due_date"/>
+                                        </t>
+                                        <t t-else="">
+                                            / Tanggal : ____________________
+                                        </t>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 0;">Metode Transaksi*</td>
+                                    <td style="padding: 2px 0;">:</td>
+                                    <td style="padding: 2px 0;"><span t-field="doc.transaction_method"/></td>
+                                </tr>
+                            </table>
+
+                            <!-- Include Checkboxes -->
+                            <table class="table table-sm table-borderless mb-2" style="width: 100%;">
+                                <tr>
+                                    <td style="width: 10%; padding: 1px 0;">Include</td>
+                                    <td style="width: 8%; padding: 1px 0;">PPN</td>
+                                    <td style="width: 5%; padding: 1px 0;">Ya</td>
+                                    <td style="width: 5%; padding: 1px 0;">
+                                        <div class="checkbox-box"><t t-if="doc.include_ppn">v</t></div>
+                                    </td>
+                                    <td style="width: 8%; padding: 1px 0;">Tidak</td>
+                                    <td style="width: 5%; padding: 1px 0;">
+                                        <div class="checkbox-box"><t t-if="not doc.include_ppn">v</t></div>
+                                    </td>
+                                    <td style="width: 59%; padding: 1px 0;"></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td style="padding: 1px 0;">PPH</td>
+                                    <td style="padding: 1px 0;">Ya</td>
+                                    <td style="padding: 1px 0;">
+                                        <div class="checkbox-box"><t t-if="doc.include_pph">v</t></div>
+                                    </td>
+                                    <td style="padding: 1px 0;">Tidak</td>
+                                    <td style="padding: 1px 0;">
+                                        <div class="checkbox-box"><t t-if="not doc.include_pph">v</t></div>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td style="padding: 1px 0;">Biaya Kirim</td>
+                                    <td style="padding: 1px 0;">Ya</td>
+                                    <td style="padding: 1px 0;">
+                                        <div class="checkbox-box"><t t-if="doc.include_shipping">v</t></div>
+                                    </td>
+                                    <td style="padding: 1px 0;">Tidak</td>
+                                    <td style="padding: 1px 0;">
+                                        <div class="checkbox-box"><t t-if="not doc.include_shipping">v</t></div>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Disclaimer Text -->
+                        <div class="mb-2" style="font-size: 11px; text-align: justify;">
+                            Apabila terjadi perselisihan dalam pelaksanaan sebagaimana dalam keterangan Purchase Order ini,<br/>
+                            maka Pihak Pemesan/Pembeli dan Penerima Pesanan/Penjual memilih domisili hukum <span t-field="doc.court_domicile"/>.
+                        </div>
+
+                        <div class="mb-2" style="font-size: 11px;">
+                            Dokumen Purchase Order ini disepakati sebagai salah satu bukti pembelian yang sah.
+                        </div>
+
+                        <!-- Lainnya Box -->
+                        <div class="mb-3" style="font-size: 11px;">
+                            <div>Lainnya :</div>
+                            <div style="border: 1px solid #000; min-height: 50px; padding: 4px; width: 100%;">
+                                <span t-field="doc.notes_other"/>
+                            </div>
+                        </div>
+
+                        <!-- Signature Section (3 Columns) -->
+                        <div class="row mt-4" style="font-size: 11px; page-break-inside: avoid;">
+                            <div class="col-4 text-center">
+                                <div>Hormat kami,</div>
+                                <div style="height: 60px;"></div>
+                                <div class="fw-bold"><span t-field="doc.signer_name"/></div>
+                                <div><span t-field="doc.signer_job"/></div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div>Pesanan Diterima Oleh,</div>
+                                <div>Salesman <span t-field="doc.company_id.name"/></div>
+                                <div style="height: 45px;"></div>
+                                <div class="fw-bold"><span t-field="doc.salesperson_name"/></div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div>Pesanan Disetujui Oleh,</div>
+                                <div><span t-field="doc.company_id.name"/></div>
+                                <div style="height: 45px;"></div>
+                                <div class="fw-bold"><span t-field="doc.approver_name"/></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -10,5 +10,15 @@
         <field name="binding_model_id" ref="model_surat_penawaran"/>
         <field name="binding_type">report</field>
     </record>
-</odoo>
 
+    <record id="action_report_customer_po" model="ir.actions.report">
+        <field name="name">Form Purchase Order Customer</field>
+        <field name="model">customer.po</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">agi_surat_penawaran.report_customer_po</field>
+        <field name="report_file">agi_surat_penawaran.report_customer_po</field>
+        <field name="print_report_name">'Purchase Order - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_customer_po"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

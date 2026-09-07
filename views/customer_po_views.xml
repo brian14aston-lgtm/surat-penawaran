@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_customer_po_form" model="ir.ui.view">
+        <field name="name">customer.po.form</field>
+        <field name="model">customer.po</field>
+        <field name="arch" type="xml">
+            <form string="Form Purchase Order Customer">
+                <header>
+                    <button name="action_print" type="object" string="Cetak / Download PDF" class="btn-primary" icon="fa-print"/>
+                    <button name="action_confirm" type="object" string="Setujui / Confirm" class="btn-primary" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button name="action_draft" type="object" string="Reset ke Draft" class="btn-secondary" attrs="{'invisible': [('state', '=', 'draft')]}"/>
+                    <button name="action_cancel" type="object" string="Batal" class="btn-secondary" attrs="{'invisible': [('state', '=', 'cancel')]}"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Nomor PO"/>
+                        <h1>
+                            <field name="name" class="text-primary" placeholder="Boleh dikosongkan untuk diisi manual oleh customer..." attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Informasi Umum &amp; Waktu">
+                            <field name="place" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="date_order" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Instansi / Customer (Pemesanan)">
+                            <field name="partner_id" widget="res_partner_many2one" options="{'always_reload': True}" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="instansi_name" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="instansi_address" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="instansi_phone" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Penandatangan Pemesan (Bertandatangan Di Bawah Ini)">
+                            <field name="signer_name" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="signer_job" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="signer_mobile" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="signer_email" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                        </group>
+                        <group string="Penerima &amp; Pengesah Pesanan (PT. Aston Graphindo Indonesia)">
+                            <field name="salesperson_id" widget="many2one_avatar_user" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="salesperson_name" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            <field name="approver_name" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Rincian Barang" name="lines">
+                            <field name="line_ids" attrs="{'readonly': [('state', '=', 'confirmed')]}">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"/>
+                                    <field name="product_code"/>
+                                    <field name="name"/>
+                                    <field name="price_unit" widget="monetary"/>
+                                    <field name="product_qty"/>
+                                    <field name="price_total" widget="monetary"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </tree>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="amount_total" widget="monetary"/>
+                            </group>
+                            <div class="oe_clear"/>
+                            <field name="amount_total_words" readonly="1" class="text-muted" placeholder="Terbilang..."/>
+                        </page>
+
+                        <page string="Ketentuan &amp; Syarat Transaksi" name="terms">
+                            <group>
+                                <group string="Pembayaran &amp; Transaksi">
+                                    <field name="payment_term_desc" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                    <field name="payment_due_date" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                    <field name="transaction_method" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                    <field name="court_domicile" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                </group>
+                                <group string="Opsi Komponen Biaya">
+                                    <field name="include_ppn" widget="boolean_toggle" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                    <field name="include_pph" widget="boolean_toggle" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                    <field name="include_shipping" widget="boolean_toggle" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                                </group>
+                            </group>
+                            <group string="Catatan Lainnya">
+                                <field name="notes_other" placeholder="Catatan tambahan / perselisihan / keterangan khusus..." attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_customer_po_tree" model="ir.ui.view">
+        <field name="name">customer.po.tree</field>
+        <field name="model">customer.po</field>
+        <field name="arch" type="xml">
+            <tree string="Form Purchase Order Customer">
+                <field name="name"/>
+                <field name="date_order"/>
+                <field name="instansi_name"/>
+                <field name="signer_name"/>
+                <field name="salesperson_name"/>
+                <field name="amount_total" widget="monetary"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'confirmed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_customer_po_search" model="ir.ui.view">
+        <field name="name">customer.po.search</field>
+        <field name="model">customer.po</field>
+        <field name="arch" type="xml">
+            <search string="Cari Form PO">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="instansi_name"/>
+                <field name="signer_name"/>
+                <field name="salesperson_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Disetujui" name="confirmed" domain="[('state', '=', 'confirmed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Customer / Instansi" name="groupby_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Salesperson" name="groupby_sales" context="{'group_by': 'salesperson_id'}"/>
+                    <filter string="Status" name="groupby_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Window Action -->
+    <record id="action_customer_po" model="ir.actions.act_window">
+        <field name="name">Form PO Customer</field>
+        <field name="res_model">customer.po</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_customer_po_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Buat Form Purchase Order (PO) Customer Baru!
+            </p>
+            <p>
+                Form ini dibuat untuk membantu customer / instansi yang tidak menerbitkan PO sendiri, sehingga tinggal ditandatangani.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menuitem -->
+    <menuitem id="menu_customer_po"
+              name="Form PO Customer"
+              parent="sale.sale_order_menu"
+              action="action_customer_po"
+              sequence="12"/>
+</odoo>
