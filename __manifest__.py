@@ -1,0 +1,20 @@
+{
+    "name": "AGI - Surat Penawaran",
+    "version": "16.0.1.0.10",
+    "summary": "Generator Surat Penawaran untuk Sales",
+    "category": "Sales",
+    "author": "AGI",
+    "website": "",
+    "license": "LGPL-3",
+    "depends": ["base", "sale", "product", "contacts", "account", "mail"],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/surat_penawaran_data.xml",
+        "views/surat_penawaran_views.xml",
+        "views/surat_penawaran_line_views.xml",
+        "report/ir_actions_report.xml",
+        "report/report_surat_penawaran.xml",
+    ],
+    "installable": True,
+    "application": True,
+}

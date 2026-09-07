@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_surat_penawaran">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="company" t-value="doc.company_id or env.company"/>
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #333;">
+                        <style>
+                            .o_standard_footer, .o_background_footer, .o_boxed_footer, .o_clean_footer,
+                            div.footer, .o_report_layout_standard > .footer,
+                            div[class*="o_standard_footer"], .o_footer { display: none !important; }
+                        </style>
+                        <div class="oe_structure"/>
+
+                        <!-- Company Header & Logo -->
+                        <div class="row mb-3 border-bottom pb-2 align-items-center">
+                            <div class="col-8">
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #1a252f;"><span t-field="doc.company_id.name"/></h5>
+                                <div style="font-size: 11px;" class="text-muted">
+                                    Jl. Songgorunggi RT 002/RW 006, Dagen, Jaten, Karanganyar, Jawa Tengah 57731<br/>
+                                    Nomor Telepon: (0271) 2025500
+                                </div>
+                            </div>
+                            <div class="col-4 text-end">
+                                <span t-if="doc.company_id.logo">
+                                    <img t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 65px; max-width: 100%;" alt="Logo"/>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Header Box -->
+                        <div class="row mt-2 mb-4 pb-2 border-bottom">
+                            <div class="col-7">
+                                <h3 class="fw-bold text-primary mb-2">SURAT PENAWARAN HARGA</h3>
+                                <table class="table table-sm table-borderless mb-0" style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 35%; padding: 2px 0;" class="fw-bold text-muted">Nomor Surat</td>
+                                        <td style="width: 3%; padding: 2px 0;">:</td>
+                                        <td style="padding: 2px 0;" class="fw-bold"><span t-field="doc.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px 0;" class="text-muted">Tanggal</td>
+                                        <td style="padding: 2px 0;">:</td>
+                                        <td style="padding: 2px 0;"><span t-field="doc.date_order" t-options='{"widget": "date"}'/></td>
+                                    </tr>
+                                    <tr t-if="doc.validity_date">
+                                        <td style="padding: 2px 0;" class="text-muted">Masa Berlaku</td>
+                                        <td style="padding: 2px 0;">:</td>
+                                        <td style="padding: 2px 0;"><span t-field="doc.validity_date" t-options='{"widget": "date"}'/></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px 0;" class="text-muted">Sales / PIC Internal</td>
+                                        <td style="padding: 2px 0;">:</td>
+                                        <td style="padding: 2px 0;">
+                                            <span t-field="doc.user_id.name"/>
+                                            <t t-set="sales_phone" t-value="doc.user_id.partner_id.mobile or doc.user_id.partner_id.phone or ''"/>
+                                            <span t-if="sales_phone"> (<t t-esc="sales_phone"/>)</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-5 text-end">
+                                <div class="p-2 bg-light rounded border text-start">
+                                    <span class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Kepada Yth:</span>
+                                    <h6 class="fw-bold mb-1 text-dark"><span t-field="doc.partner_id.name"/></h6>
+                                    <div t-if="doc.partner_id.street" class="text-muted" style="font-size: 11px;">
+                                        <span t-field="doc.partner_id.street"/><br t-if="doc.partner_id.street2"/>
+                                        <span t-field="doc.partner_id.street2" t-if="doc.partner_id.street2"/>
+                                    </div>
+                                     <div class="mt-1" style="font-size: 11px;">
+                                         <span class="fw-bold">Up: </span>
+                                         <span t-esc="doc.pic_name or (doc.partner_id.child_ids and doc.partner_id.child_ids[0].name) or doc.partner_id.name"/>
+                                         <t t-set="contact_pos" t-value="doc.pic_position or (doc.partner_id.child_ids and doc.partner_id.child_ids[0].function) or ''"/>
+                                         <span t-if="contact_pos"> (<t t-esc="contact_pos"/>)</span>
+                                     </div>
+                                     <div style="font-size: 11px;" class="text-muted">
+                                         <t t-set="contact_phone" t-value="doc.pic_phone or (doc.partner_id.child_ids and (doc.partner_id.child_ids[0].mobile or doc.partner_id.child_ids[0].phone)) or doc.partner_id.mobile or doc.partner_id.phone"/>
+                                         <t t-set="contact_email" t-value="doc.pic_email or (doc.partner_id.child_ids and doc.partner_id.child_ids[0].email) or doc.partner_id.email"/>
+                                         <span t-if="contact_phone"><i class="fa fa-phone me-1"/> <t t-esc="contact_phone"/></span>
+                                         <span t-if="contact_email" class="ms-2"><i class="fa fa-envelope me-1"/> <t t-esc="contact_email"/></span>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Letter Body Intro -->
+                        <div class="row mb-3">
+                            <div class="col-12" style="font-size: 11.5px; line-height: 1.5; text-align: justify;">
+                                <p class="mb-2">Dengan hormat,</p>
+                                <p class="mb-2 text-muted">
+                                    <strong>PT Aston Graphindo Indonesia (ORIMAX – Orimax Government Solution)</strong> merupakan penyedia/vendor pengadaan untuk kebutuhan instansi pemerintah melalui e-Katalog LKPP/INAPROC serta seluruh platform e-purchasing pemerintah lainnya. Dengan jaringan pelayanan yang menjangkau seluruh Indonesia, kami berkomitmen menghadirkan produk berkualitas serta layanan purna jual yang responsif guna mendukung kelancaran operasional kantor di lingkungan Bapak/Ibu.
+                                </p>
+                                <p class="mb-2 text-muted">
+                                    Sehubungan dengan kebutuhan perusahaan/instansi Bapak/Ibu, bersama surat ini kami sampaikan penawaran harga untuk produk / layanan sebagai berikut:
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Product Lines Table -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <table class="table table-sm table-bordered" style="border-color: #dee2e6;">
+                                    <thead style="background-color: #f8f9fa;">
+                                        <tr class="text-center align-middle" style="font-size: 12px;">
+                                            <th style="width: 5%;">No</th>
+                                            <th style="width: 40%; text-align: left;">Deskripsi Produk / Layanan</th>
+                                            <th style="width: 10%;">Qty</th>
+                                            <th style="width: 10%;">Satuan</th>
+                                            <th style="width: 15%; text-align: right;">Harga Satuan</th>
+                                            <th style="width: 5%;">Disc</th>
+                                            <th style="width: 15%; text-align: right;">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="font-size: 12px;">
+                                        <t t-foreach="doc.line_ids" t-as="line">
+                                            <tr class="align-middle">
+                                                <td class="text-center"><t t-esc="line_index + 1"/></td>
+                                                <td>
+                                                    <strong><span t-field="line.product_id.name"/></strong>
+                                                    <div t-if="line.name and line.name != line.product_id.name" class="text-muted" style="font-size: 11px;">
+                                                        <span t-field="line.name"/>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span t-field="line.product_uom_qty"/>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span t-field="line.product_uom.name"/>
+                                                </td>
+                                                <td class="text-end">
+                                                    <span t-field="line.unit_price" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                                </td>
+                                                <td class="text-center">
+                                                    <t t-if="line.discount &gt; 0">
+                                                        <span t-esc="'%g' % line.discount"/>%
+                                                    </t>
+                                                    <t t-else="">-</t>
+                                                </td>
+                                                <td class="text-end fw-bold">
+                                                    <span t-field="line.price_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Summary & Notes -->
+                        <div class="row mb-4">
+                            <div class="col-7">
+                                <t t-if="doc.notes">
+                                    <div class="card p-2 bg-light border" style="font-size: 11px;">
+                                        <span class="fw-bold mb-1">Catatan / Syarat &amp; Ketentuan:</span>
+                                        <div style="white-space: pre-wrap;"><span t-field="doc.notes"/></div>
+                                    </div>
+                                </t>
+                            </div>
+                            <div class="col-5">
+                                <table class="table table-sm table-borderless" style="font-size: 12px;">
+                                    <tr class="border-bottom">
+                                        <td class="text-muted">Total Sebelum Pajak:</td>
+                                        <td class="text-end">
+                                            <span t-field="doc.amount_untaxed" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-bottom" t-if="doc.amount_tax &gt; 0">
+                                        <td class="text-muted">Pajak (PPN):</td>
+                                        <td class="text-end">
+                                            <span t-field="doc.amount_tax" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-top border-bottom bg-light">
+                                        <td class="fw-bold text-dark" style="font-size: 13px;">Grand Total:</td>
+                                        <td class="text-end fw-bold text-primary" style="font-size: 14px;">
+                                            <span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Closing Statement -->
+                        <div class="row mb-4">
+                            <div class="col-12 text-muted" style="font-size: 12px;">
+                                <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami agar penawaran ini dapat memenuhi kebutuhan dan terjalin kerjasama yang baik. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+                            </div>
+                        </div>
+
+                        <!-- Single Signature Block (Hormat kami) -->
+                        <div class="row text-center mt-4" style="page-break-inside: avoid; font-size: 12px;">
+                            <div class="col-12 text-end" style="padding-right: 60px;">
+                                <p class="mb-1 text-muted">Hormat kami,</p>
+                                <p class="fw-bold mb-1">PT. Aston Graphindo Indonesia</p>
+                                <div class="my-2">
+                                    <t t-set="qr_data" t-value="'Surat Penawaran Sah - PT Aston Graphindo Indonesia. No: %s, Sales: %s, Tanggal: %s' % (doc.name or '', doc.user_id.name or '', doc.date_order or '')"/>
+                                    <img t-att-src="'/report/barcode/?barcode_type=%s&amp;value=%s&amp;width=%s&amp;height=%s' % ('QR', quote_plus(qr_data), 120, 120)" style="max-height: 90px; width: auto;" alt="Tanda Tangan QR"/>
+                                </div>
+                                <p class="mb-0 fw-bold"><u>( <span t-field="doc.user_id.name"/> )</u></p>
+                                <span class="text-muted" style="font-size: 11px;">Sales Department</span>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

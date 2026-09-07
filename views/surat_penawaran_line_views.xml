@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_surat_penawaran_line_tree" model="ir.ui.view">
+        <field name="name">surat.penawaran.line.tree</field>
+        <field name="model">surat.penawaran.line</field>
+        <field name="arch" type="xml">
+            <tree string="Detail Penawaran Produk" create="false" edit="false">
+                <field name="surat_id"/>
+                <field name="product_id"/>
+                <field name="name"/>
+                <field name="product_uom_qty" string="Qty"/>
+                <field name="product_uom" string="Satuan"/>
+                <field name="unit_price" widget="monetary"/>
+                <field name="discount" string="Disc (%)"/>
+                <field name="price_subtotal" widget="monetary"/>
+                <field name="price_total" widget="monetary"/>
+                <field name="currency_id" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_surat_penawaran_line_pivot" model="ir.ui.view">
+        <field name="name">surat.penawaran.line.pivot</field>
+        <field name="model">surat.penawaran.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Analisis Produk Penawaran">
+                <field name="product_id" type="row"/>
+                <field name="product_uom_qty" type="measure"/>
+                <field name="price_subtotal" type="measure"/>
+                <field name="price_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_surat_penawaran_line_search" model="ir.ui.view">
+        <field name="name">surat.penawaran.line.search</field>
+        <field name="model">surat.penawaran.line</field>
+        <field name="arch" type="xml">
+            <search string="Cari Detail Penawaran">
+                <field name="surat_id"/>
+                <field name="product_id"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_surat" string="Surat Penawaran" context="{'group_by': 'surat_id'}"/>
+                    <filter name="group_by_product" string="Produk" context="{'group_by': 'product_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>
+

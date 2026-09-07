@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_surat_penawaran,surat.penawaran,model_surat_penawaran,,1,1,1,1
+access_surat_penawaran_manager,surat.penawaran.manager,model_surat_penawaran,,1,1,1,1
+access_surat_penawaran_line,surat.penawaran.line,model_surat_penawaran_line,,1,1,1,1
+access_surat_penawaran_line_manager,surat.penawaran.line.manager,model_surat_penawaran_line,,1,1,1,1

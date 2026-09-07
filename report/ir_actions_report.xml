@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_surat_penawaran" model="ir.actions.report">
+        <field name="name">Surat Penawaran</field>
+        <field name="model">surat.penawaran</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">agi_surat_penawaran.report_surat_penawaran</field>
+        <field name="report_file">agi_surat_penawaran.report_surat_penawaran</field>
+        <field name="print_report_name">'Surat Penawaran - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_surat_penawaran"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
+
