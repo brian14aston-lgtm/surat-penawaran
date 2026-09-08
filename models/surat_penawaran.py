@@ -227,7 +227,7 @@ class SuratPenawaran(models.Model):
         }
 
     def action_send_email(self):
-        """Kirim Surat Penawaran via 1 Email Bersama Kantor."""
+        """Kirim Surat Penawaran via 1 Email Bersama Kantor (marketing@orimax.co.id)."""
         self.ensure_one()
         email_to = (self.pic_email or "").strip()
         if not email_to and self.partner_id:
@@ -235,7 +235,7 @@ class SuratPenawaran(models.Model):
         if not email_to:
             raise ValidationError("Alamat Email PIC atau Customer belum diisi!")
 
-        company_email = self.company_id.email or "penawaran@orimax.co.id"
+        company_email = self.company_id.email or "marketing@orimax.co.id"
         subject = f"Surat Penawaran Harga - {self.name} - {self.partner_id.name}"
         body_html = f"""
             <p>Yth. Bapak/Ibu <strong>{self.pic_name or 'Customer'}</strong>,</p>
