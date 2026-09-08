@@ -189,6 +189,8 @@ class SuratPenawaran(models.Model):
             rec.message_post(body="Surat Penawaran direset kembali ke **Draft**.")
 
     def action_print(self):
+        self.ensure_one()
+        self._trigger_crm_p2()
         return self.env.ref("agi_surat_penawaran.action_report_surat_penawaran").report_action(self)
 
     @api.constrains("validity_date", "date_order")

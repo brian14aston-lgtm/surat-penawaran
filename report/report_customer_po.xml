@@ -26,6 +26,22 @@
                         </style>
                         <div class="oe_structure"/>
 
+                        <!-- Company Header & Logo -->
+                        <div class="row mb-3 border-bottom pb-2 align-items-center">
+                            <div class="col-8">
+                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #1a252f;"><span t-field="doc.company_id.name"/></h5>
+                                <div style="font-size: 10px;" class="text-muted">
+                                    Jl. Songgorunggi RT 002/RW 006, Dagen, Jaten, Karanganyar, Jawa Tengah 57731<br/>
+                                    Nomor Telepon: (0271) 2025500
+                                </div>
+                            </div>
+                            <div class="col-4 text-end">
+                                <span t-if="doc.company_id.logo">
+                                    <img t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 55px; max-width: 100%;" alt="Logo"/>
+                                </span>
+                            </div>
+                        </div>
+
                         <!-- Header Information -->
                         <table class="table table-sm table-borderless mb-2" style="width: 100%; font-size: 11px;">
                             <tr>

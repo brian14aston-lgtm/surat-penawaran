@@ -200,16 +200,80 @@ class CustomerPO(models.Model):
         res = re.sub(r"\s+", " ", res)
         return res + " Rupiah"
 
+    def _trigger_crm_p1(self):
+        """Otomatis memicu perpindahan lead ke stage P1 (Desire / Hot) saat Form PO dibuat / disiapkan."""
+        p1_stage = self.env["crm.stage"].search([
+            "|",
+            ("name", "ilike", "P1"),
+            ("name", "ilike", "Desire")
+        ], limit=1)
+        for rec in self:
+            lead = rec.opportunity_id
+            if not lead and rec.partner_id:
+                lead = self.env["crm.lead"].search([
+                    ("partner_id", "=", rec.partner_id.id),
+                    ("type", "=", "opportunity"),
+                    ("probability", "<", 100),
+                ], limit=1)
+                if lead:
+                    rec.opportunity_id = lead.id
+
+            if lead and p1_stage:
+                current_stage_name = lead.stage_id.name or ""
+                if "P0" not in current_stage_name:
+                    if lead.stage_id.id != p1_stage.id:
+                        lead.stage_id = p1_stage.id
+                        po_num = rec.name or "(Draft)"
+                        lead.message_post(
+                            body=f"🔥 **HOT LEAD! Otomatis Naik ke P1 (Desire / Hot)** karena Form Purchase Order (PO) Customer telah dibuat (Nomor: {po_num}, Total: {rec.currency_id.symbol or 'Rp'} {rec.amount_total:,.2f}). Menunggu konfirmasi / tanda tangan customer."
+                        )
+                if not lead.expected_revenue or lead.expected_revenue == 0:
+                    lead.expected_revenue = rec.amount_total
+
+    def _trigger_crm_p0(self):
+        """Otomatis memicu perpindahan lead ke stage P0 (Deal / Won) saat Form PO disetujui / confirmed."""
+        p0_stage = self.env["crm.stage"].search([
+            "|",
+            ("name", "ilike", "P0"),
+            ("name", "ilike", "Deal")
+        ], limit=1)
+        for rec in self:
+            lead = rec.opportunity_id
+            if not lead and rec.partner_id:
+                lead = self.env["crm.lead"].search([
+                    ("partner_id", "=", rec.partner_id.id),
+                    ("type", "=", "opportunity"),
+                ], limit=1)
+                if lead:
+                    rec.opportunity_id = lead.id
+
+            if lead and p0_stage:
+                if lead.stage_id.id != p0_stage.id:
+                    lead.stage_id = p0_stage.id
+                    lead.probability = 100
+                    po_num = rec.name or "(Terkonfirmasi)"
+                    lead.message_post(
+                        body=f"🎉 **DEAL! Otomatis Naik ke P0 (Deal / Won)** karena Form Purchase Order (PO) Customer telah disetujui / Confirmed (Nomor: {po_num}, Total: {rec.currency_id.symbol or 'Rp'} {rec.amount_total:,.2f})."
+                    )
+                if not lead.expected_revenue or lead.expected_revenue == 0:
+                    lead.expected_revenue = rec.amount_total
+
     @api.model
     def create(self, vals):
-        # Allow blank name for manual customer filling
-        return super(CustomerPO, self).create(vals)
+        if vals.get("name", "New") == "New":
+            vals["name"] = self.env["ir.sequence"].next_by_code("customer.po") or "New"
+        rec = super(CustomerPO, self).create(vals)
+        rec._trigger_crm_p1()
+        return rec
 
     def action_print(self):
+        self.ensure_one()
+        self._trigger_crm_p1()
         return self.env.ref("agi_surat_penawaran.action_report_customer_po").report_action(self)
 
     def action_confirm(self):
         self.write({"state": "confirmed"})
+        self._trigger_crm_p0()
 
     def action_cancel(self):
         self.write({"state": "cancel"})
