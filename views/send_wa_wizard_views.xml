@@ -6,25 +6,30 @@
         <field name="arch" type="xml">
             <form string="Pratinjau Pesan WhatsApp">
                 <sheet>
-                    <div class="alert alert-info" role="alert">
+                    <div class="alert alert-info py-2 mb-3" role="alert">
                         <strong>💡 Preview Pesan:</strong> Anda dapat memeriksa dan mengedit kalimat pesan WhatsApp di bawah ini sebelum dikirimkan ke customer.
                     </div>
-                    <group>
-                        <group string="Tujuan Pengiriman">
-                            <field name="doc_model" invisible="1"/>
-                            <field name="doc_id" invisible="1"/>
-                            <field name="doc_name" readonly="1" string="Dokumen"/>
-                            <field name="partner_id" string="Instansi / Customer"/>
-                        </group>
-                        <group string="Kontak Penerima">
-                            <field name="recipient_name" string="Nama PIC"/>
-                            <field name="recipient_phone" string="No. WhatsApp / HP"/>
-                            <field name="attach_pdf" widget="boolean_toggle"/>
-                        </group>
-                    </group>
-                    <group string="Teks Pesan WhatsApp (Dapat Diedit)">
-                        <field name="message" nolabel="1" placeholder="Tuliskan pesan WhatsApp di sini..." rows="8"/>
-                    </group>
+                    <div class="row">
+                        <div class="col-6">
+                            <group string="Tujuan Pengiriman" class="mb-0">
+                                <field name="doc_model" invisible="1"/>
+                                <field name="doc_id" invisible="1"/>
+                                <field name="doc_name" readonly="1" string="Dokumen"/>
+                                <field name="partner_id" string="Instansi / Customer"/>
+                            </group>
+                        </div>
+                        <div class="col-6">
+                            <group string="Kontak Penerima" class="mb-0">
+                                <field name="recipient_name" string="Nama PIC"/>
+                                <field name="recipient_phone" string="No. WhatsApp / HP"/>
+                                <field name="attach_pdf" widget="boolean_toggle"/>
+                            </group>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label for="message" string="Teks Pesan WhatsApp (Dapat Diedit)" class="fw-bold mb-1"/>
+                        <field name="message" class="w-100" style="width: 100% !important; min-height: 180px; font-family: inherit; font-size: 13px;" placeholder="Tuliskan pesan WhatsApp di sini..."/>
+                    </div>
                 </sheet>
                 <footer>
                     <button name="action_confirm_send" string="🚀 Kirim Sekarang" type="object" class="btn-success" icon="fa-paper-plane"/>
