@@ -1,3 +1,5 @@
+import base64
+import requests
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -271,8 +273,37 @@ class CustomerPO(models.Model):
         self._trigger_crm_p1()
         return self.env.ref("agi_surat_penawaran.action_report_customer_po").report_action(self)
 
+    def _generate_ai_po_greeting(self):
+        """Generate greeting sopan & profesional untuk Purchase Order by AI."""
+        try:
+            ResConfig = self.env['res.config.settings']
+            if hasattr(ResConfig, 'get_active_ai_config'):
+                cfg = ResConfig.get_active_ai_config(self.env)
+                api_key = cfg.get('api_key')
+                base_url = cfg.get('base_url')
+                model = cfg.get('model_flash') or 'deepseek-chat'
+
+                if api_key and base_url:
+                    endpoint = base_url.rstrip('/') + '/chat/completions'
+                    headers = {'Content-Type': 'application/json', 'Authorization': f"Bearer {api_key}"}
+                    prompt = (
+                        f"Buatkan 1 kalimat salam pembuka dan pengantar yang sangat sopan, ramah, dan profesional dalam Bahasa Indonesia "
+                        f"dari Sales '{self.salesperson_id.name}' (PT. Aston Graphindo Indonesia) untuk pemesan '{self.signer_name}' di instansi '{self.partner_id.name}'. "
+                        f"Tujuan: menyampaikan dokumen resmi Form Purchase Order (PO) nomor {self.name or 'Draft'}. "
+                        f"Hanya kembalikan kalimat salam pengantar saja (tanpa tanda kutip, tanpa penjelasan)."
+                    )
+                    payload = {'model': model, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': 100, 'temperature': 0.5}
+                    resp = requests.post(endpoint, headers=headers, json=payload, timeout=5)
+                    if resp.status_code == 200:
+                        content = resp.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+                        if content:
+                            return content
+        except Exception:
+            pass
+        return f"Terima kasih atas kepercayaan Bapak/Ibu dan seluruh jajaran di {self.partner_id.name} kepada perusahaan kami."
+
     def action_send_whatsapp(self):
-        """Kirim pesan Form Purchase Order via WhatsApp ke Pemesan."""
+        """Kirim pesan Form Purchase Order via WhatsApp (Evolution API dengan fallback WA Web)."""
         self.ensure_one()
         phone = (self.signer_mobile or self.instansi_phone or "").strip()
         if not phone and self.partner_id:
@@ -285,27 +316,79 @@ class CustomerPO(models.Model):
             clean_phone = "62" + clean_phone[1:]
 
         po_num = self.name or "(Draft PO)"
+        ai_greeting = self._generate_ai_po_greeting()
+
         pesan = (
             f"Yth. Bapak/Ibu *{self.signer_name or 'Pemesan'}* - *{self.partner_id.name}*,\n\n"
-            f"Berikut kami sampaikan dokumen *Form Purchase Order (PO)* resmi untuk pengadaan kebutuhan kantor.\n"
-            f"Nomor PO: *{po_num}*\n"
-            f"Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*.\n\n"
-            f"Mohon untuk dapat dicek, ditandatangani, dan dikonfirmasi kembali. Terima kasih.\n\n"
-            f"Salam,\n*{self.salesperson_id.name}*\nPT. Aston Graphindo Indonesia"
+            f"{ai_greeting}\n\n"
+            f"Bersama ini kami lampirkan dokumen resmi *Form Purchase Order (PO)* untuk pengadaan kebutuhan kantor:\n"
+            f"• Nomor PO: *{po_num}*\n"
+            f"• Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*\n\n"
+            f"Dokumen Purchase Order PDF terlampir. Mohon untuk dicek dan dikonfirmasi kembali. Terima kasih atas kerja samanya.\n\n"
+            f"Hormat kami,\n*{self.salesperson_id.name}*\nPT. Aston Graphindo Indonesia"
         )
 
-        import urllib.parse
-        encoded_msg = urllib.parse.quote(pesan)
-        wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+        # Coba kirim langsung via Evolution API jika instance ada
+        ICP = self.env['ir.config_parameter'].sudo()
+        evo_url = ICP.get_param('sirup_base.evolution_api_url')
+        evo_key = ICP.get_param('sirup_base.evolution_api_key')
 
-        self.message_post(body=f"💬 **Form PO Dikirim via WhatsApp** ke nomor {clean_phone} ({self.signer_name}).")
+        sent_via_evolution = False
+        if evo_url and evo_key:
+            inst = self.env['evolution.instance'].search([('sales_id', '=', self.salesperson_id.id)], limit=1)
+            if not inst:
+                inst = self.env['evolution.instance'].search([], limit=1)
+            
+            if inst and inst.instance_name:
+                try:
+                    # A. Kirim Text
+                    send_text_url = f"{evo_url.rstrip('/')}/message/sendText/{inst.instance_name}"
+                    headers = {'apikey': evo_key, 'Content-Type': 'application/json'}
+                    requests.post(send_text_url, headers=headers, json={'number': clean_phone, 'text': pesan}, timeout=8)
+
+                    # B. Kirim Dokumen PDF
+                    pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+                        "agi_surat_penawaran.action_report_customer_po", [self.id]
+                    )
+                    send_media_url = f"{evo_url.rstrip('/')}/message/sendMedia/{inst.instance_name}"
+                    media_data = {
+                        'number': clean_phone,
+                        'mediatype': 'document',
+                        'mimetype': 'application/pdf',
+                        'caption': f"Form Purchase Order {po_num} - PT. Aston Graphindo Indonesia",
+                        'media': base64.b64encode(pdf_content).decode('utf-8'),
+                        'fileName': f"Purchase_Order_{po_num.replace('/', '_')}.pdf"
+                    }
+                    resp_media = requests.post(send_media_url, headers=headers, json=media_data, timeout=12)
+                    if resp_media.status_code in [200, 201]:
+                        sent_via_evolution = True
+                except Exception:
+                    sent_via_evolution = False
+
         self._trigger_crm_p1()
 
-        return {
-            "type": "ir.actions.act_url",
-            "url": wa_url,
-            "target": "new",
-        }
+        if sent_via_evolution:
+            self.message_post(body=f"⚡💬 **Form Purchase Order & PDF Terkirim Otomatis via Evolution API** ke nomor {clean_phone} ({self.signer_name}).")
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'WhatsApp Terkirim!',
+                    'message': f"Form PO & PDF berhasil dikirim langsung via WhatsApp ke {clean_phone}.",
+                    'type': 'success',
+                    'sticky': False,
+                }
+            }
+        else:
+            import urllib.parse
+            encoded_msg = urllib.parse.quote(pesan)
+            wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+            self.message_post(body=f"💬 **Form PO Dibuka via WhatsApp Web** untuk nomor {clean_phone} ({self.signer_name}).")
+            return {
+                "type": "ir.actions.act_url",
+                "url": wa_url,
+                "target": "new",
+            }
 
     def action_send_email(self):
         """Kirim Form Purchase Order via 1 Email Bersama Kantor (marketing@orimax.co.id)."""

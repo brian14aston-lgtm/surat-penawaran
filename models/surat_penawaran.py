@@ -1,4 +1,5 @@
 import base64
+import requests
 from datetime import date, timedelta
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -190,8 +191,47 @@ class SuratPenawaran(models.Model):
             rec.write({"state": "draft"})
             rec.message_post(body="Surat Penawaran direset kembali ke **Draft**.")
 
+    def _generate_ai_wa_greeting(self, doc_type="penawaran"):
+        """Generate greeting sopan & profesional menggunakan AI yang sedang aktif."""
+        try:
+            ResConfig = self.env['res.config.settings']
+            if hasattr(ResConfig, 'get_active_ai_config'):
+                cfg = ResConfig.get_active_ai_config(self.env)
+                api_key = cfg.get('api_key')
+                base_url = cfg.get('base_url')
+                model = cfg.get('model_flash') or 'deepseek-chat'
+
+                if api_key and base_url:
+                    endpoint = base_url.rstrip('/') + '/chat/completions'
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': f"Bearer {api_key}"
+                    }
+                    prompt = (
+                        f"Buatkan 1-2 kalimat salam pembuka dan pengantar yang sangat sopan, ramah, dan profesional dalam Bahasa Indonesia "
+                        f"dari Sales '{self.user_id.name}' (PT. Aston Graphindo Indonesia) untuk customer '{self.pic_name}' di instansi '{self.partner_id.name}'. "
+                        f"Tujuan: menyampaikan dokumen resmi {doc_type} nomor {self.name}. "
+                        f"Hanya kembalikan teks salam pengantar saja (tanpa tanda kutip, tanpa penjelasan)."
+                    )
+                    payload = {
+                        'model': model,
+                        'messages': [{'role': 'user', 'content': prompt}],
+                        'max_tokens': 100,
+                        'temperature': 0.5,
+                    }
+                    resp = requests.post(endpoint, headers=headers, json=payload, timeout=5)
+                    if resp.status_code == 200:
+                        content = resp.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+                        if content:
+                            return content
+        except Exception:
+            pass
+
+        # Fallback sopan standar jika AI offline
+        return f"Semoga Bapak/Ibu dan tim di {self.partner_id.name} senantiasa dalam keadaan sehat dan lancar dalam menjalankan aktivitas."
+
     def action_send_whatsapp(self):
-        """Kirim pesan dan dokumen penawaran via WhatsApp ke PIC."""
+        """Kirim pesan dan dokumen penawaran via WhatsApp (Evolution API dengan fallback WA Web)."""
         self.ensure_one()
         phone = (self.pic_phone or "").strip()
         if not phone and self.partner_id:
@@ -199,32 +239,89 @@ class SuratPenawaran(models.Model):
         if not phone:
             raise ValidationError("Nomor WhatsApp/HP PIC atau Customer belum diisi!")
 
-        # Bersihkan nomor format Indonesia
         clean_phone = "".join(filter(str.isdigit, phone))
         if clean_phone.startswith("0"):
             clean_phone = "62" + clean_phone[1:]
 
+        # 1. Generate salam sopan by AI
+        ai_greeting = self._generate_ai_wa_greeting(doc_type="Surat Penawaran Harga")
+
         pesan = (
             f"Yth. Bapak/Ibu *{self.pic_name or 'Customer'}* - *{self.partner_id.name}*,\n\n"
-            f"Berikut kami sampaikan Surat Penawaran Harga resmi Nomor: *{self.name}* dari PT. Aston Graphindo Indonesia.\n"
-            f"Total Penawaran: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}* (Berlaku s/d {self.validity_date or '-'}).\n\n"
-            f"Dokumen Surat Penawaran resmi terlampir. Terima kasih.\n\n"
-            f"Salam,\n*{self.user_id.name}*\nPT. Aston Graphindo Indonesia"
+            f"{ai_greeting}\n\n"
+            f"Bersama ini kami sampaikan dokumen *Surat Penawaran Harga* resmi:\n"
+            f"• Nomor Surat: *{self.name}*\n"
+            f"• Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*\n"
+            f"• Masa Berlaku: *s/d {self.validity_date or '-'}*\n\n"
+            f"Dokumen Surat Penawaran resmi PDF terlampir. Apabila ada hal yang perlu didiskusikan atau disesuaikan, kami siap membantu.\n\n"
+            f"Hormat kami,\n*{self.user_id.name}*\nPT. Aston Graphindo Indonesia"
         )
 
-        import urllib.parse
-        encoded_msg = urllib.parse.quote(pesan)
-        wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+        # 2. Coba kirim langsung via Evolution API jika instance terkonfigurasi & online
+        ICP = self.env['ir.config_parameter'].sudo()
+        evo_url = ICP.get_param('sirup_base.evolution_api_url')
+        evo_key = ICP.get_param('sirup_base.evolution_api_key')
+
+        sent_via_evolution = False
+        if evo_url and evo_key:
+            inst = self.env['evolution.instance'].search([('sales_id', '=', self.user_id.id)], limit=1)
+            if not inst:
+                inst = self.env['evolution.instance'].search([], limit=1)
+            
+            if inst and inst.instance_name:
+                try:
+                    # A. Kirim Text Pesan
+                    send_text_url = f"{evo_url.rstrip('/')}/message/sendText/{inst.instance_name}"
+                    headers = {'apikey': evo_key, 'Content-Type': 'application/json'}
+                    body_data = {'number': clean_phone, 'text': pesan}
+                    resp_text = requests.post(send_text_url, headers=headers, json=body_data, timeout=8)
+
+                    # B. Kirim Dokumen PDF
+                    pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+                        "agi_surat_penawaran.action_report_surat_penawaran", [self.id]
+                    )
+                    send_media_url = f"{evo_url.rstrip('/')}/message/sendMedia/{inst.instance_name}"
+                    media_data = {
+                        'number': clean_phone,
+                        'mediatype': 'document',
+                        'mimetype': 'application/pdf',
+                        'caption': f"Surat Penawaran {self.name} - PT. Aston Graphindo Indonesia",
+                        'media': base64.b64encode(pdf_content).decode('utf-8'),
+                        'fileName': f"Surat_Penawaran_{self.name.replace('/', '_')}.pdf"
+                    }
+                    requests.post(send_media_url, headers=headers, json=media_data, timeout=12)
+
+                    if resp_text.status_code in [200, 201]:
+                        sent_via_evolution = True
+                except Exception:
+                    sent_via_evolution = False
 
         self.write({"state": "sent"})
-        self.message_post(body=f"💬 **Surat Penawaran Dikirim via WhatsApp** ke nomor {clean_phone} ({self.pic_name}).")
         self._trigger_crm_p2()
 
-        return {
-            "type": "ir.actions.act_url",
-            "url": wa_url,
-            "target": "new",
-        }
+        if sent_via_evolution:
+            self.message_post(body=f"⚡💬 **Surat Penawaran & PDF Terkirim Otomatis via Evolution API** ke nomor {clean_phone} ({self.pic_name}).")
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'WhatsApp Terkirim!',
+                    'message': f"Pesan & PDF Penawaran berhasil dikirim langsung via WhatsApp ke {clean_phone}.",
+                    'type': 'success',
+                    'sticky': False,
+                }
+            }
+        else:
+            # Fallback WA Web jika server Evolution tidak aktif
+            import urllib.parse
+            encoded_msg = urllib.parse.quote(pesan)
+            wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+            self.message_post(body=f"💬 **Surat Penawaran Dibuka via WhatsApp Web** untuk nomor {clean_phone} ({self.pic_name}).")
+            return {
+                "type": "ir.actions.act_url",
+                "url": wa_url,
+                "target": "new",
+            }
 
     def action_send_email(self):
         """Kirim Surat Penawaran via 1 Email Bersama Kantor (marketing@orimax.co.id)."""
