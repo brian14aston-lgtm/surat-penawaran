@@ -31,6 +31,17 @@ class SuratPenawaran(models.Model):
         tracking=True,
         help="Lead / Opportunity yang terkait dengan surat penawaran ini.",
     )
+    company_entity = fields.Selection(
+        [
+            ("aston", "PT. Aston Graphindo Indonesia"),
+            ("solusi_negeri", "PT. AGI Solusi Negeri"),
+        ],
+        string="Perusahaan (Kop Surat)",
+        default="aston",
+        required=True,
+        tracking=True,
+        help="Pilih identitas perusahaan & kop surat resmi yang digunakan untuk penawaran ini.",
+    )
     user_id = fields.Many2one(
         "res.users",
         string="Salesperson",

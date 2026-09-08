@@ -18,6 +18,17 @@ class CustomerPO(models.Model):
         default="",
         tracking=True,
     )
+    company_entity = fields.Selection(
+        [
+            ("aston", "PT. Aston Graphindo Indonesia"),
+            ("solusi_negeri", "PT. AGI Solusi Negeri"),
+        ],
+        string="Perusahaan (Kop / Tujuan PO)",
+        default="aston",
+        required=True,
+        tracking=True,
+        help="Pilih identitas perusahaan penerima pesanan.",
+    )
     place = fields.Char(
         string="Tempat",
         tracking=True,

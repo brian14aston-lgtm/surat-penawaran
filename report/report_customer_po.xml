@@ -29,7 +29,12 @@
                         <!-- Company Header & Logo -->
                         <div class="row mb-3 border-bottom pb-2 align-items-center">
                             <div class="col-8">
-                                <h5 class="fw-bold mb-1 text-uppercase" style="color: #1a252f;"><span t-field="doc.company_id.name"/></h5>
+                                <t t-if="doc.company_entity == 'solusi_negeri'">
+                                    <h5 class="fw-bold mb-1 text-uppercase" style="color: #1a252f;">PT. AGI SOLUSI NEGERI</h5>
+                                </t>
+                                <t t-else="">
+                                    <h5 class="fw-bold mb-1 text-uppercase" style="color: #1a252f;">PT. ASTON GRAPHINDO INDONESIA</h5>
+                                </t>
                                 <div style="font-size: 10px;" class="text-muted">
                                     Jl. Songgorunggi RT 002/RW 006, Dagen, Jaten, Karanganyar, Jawa Tengah 57731<br/>
                                     Nomor Telepon: (0271) 2025500
@@ -72,13 +77,12 @@
                         <!-- Kepada -->
                         <div class="mb-2" style="font-size: 11px;">
                             <div>Kepada :</div>
-                            <div class="fw-bold"><span t-field="doc.company_id.name"/></div>
-                            <div>
-                                <t t-if="doc.company_id.street"><span t-field="doc.company_id.street"/>, </t>
-                                <t t-if="doc.company_id.street2"><span t-field="doc.company_id.street2"/>, </t>
-                                <t t-if="doc.company_id.city"><span t-field="doc.company_id.city"/>, </t>
-                                <t t-if="doc.company_id.state_id"><span t-field="doc.company_id.state_id.name"/> </t>
-                                <t t-if="doc.company_id.zip"><span t-field="doc.company_id.zip"/></t>
+                            <div class="fw-bold">
+                                <t t-if="doc.company_entity == 'solusi_negeri'">PT. AGI Solusi Negeri</t>
+                                <t t-else="">PT. Aston Graphindo Indonesia</t>
+                            </div>
+                            <div class="text-muted" style="font-size: 10px;">
+                                Jl. Songgorunggi RT 002/RW 006, Dagen, Jaten, Karanganyar, Jawa Tengah 57731 | Telp: (0271) 2025500
                             </div>
                         </div>
 

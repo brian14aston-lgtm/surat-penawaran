@@ -24,6 +24,7 @@
                     </div>
                     <group>
                         <group string="Informasi Umum &amp; Waktu">
+                            <field name="company_entity" widget="radio" options="{'horizontal': true}" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                             <field name="place" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                             <field name="date_order" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
