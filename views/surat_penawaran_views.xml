@@ -7,8 +7,10 @@
         <field name="arch" type="xml">
             <form string="Surat Penawaran">
                 <header>
-                    <button name="action_print" type="object" string="Cetak PDF" class="btn-primary" icon="fa-print"/>
-                    <button name="action_send" type="object" string="Tandai Terkirim" class="btn-primary" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button name="action_send_whatsapp" type="object" string="💬 Kirim WA" class="btn-success" icon="fa-whatsapp"/>
+                    <button name="action_send_email" type="object" string="✉️ Kirim Email" class="btn-primary" icon="fa-envelope"/>
+                    <button name="action_print" type="object" string="Cetak PDF" class="btn-secondary" icon="fa-print"/>
+                    <button name="action_send" type="object" string="Tandai Terkirim" class="btn-secondary" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
                     <button name="action_accept" type="object" string="Diterima" class="btn-success" attrs="{'invisible': [('state', '!=', 'sent')]}"/>
                     <button name="action_refuse" type="object" string="Ditolak" class="btn-danger" attrs="{'invisible': [('state', '!=', 'sent')]}"/>
                     <button name="action_reset_to_draft" type="object" string="Reset ke Draft" class="btn-secondary" attrs="{'invisible': [('state', '=', 'draft')]}"/>

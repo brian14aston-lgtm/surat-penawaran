@@ -1,3 +1,5 @@
+import base64
+from datetime import date, timedelta
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -187,6 +189,111 @@ class SuratPenawaran(models.Model):
         for rec in self:
             rec.write({"state": "draft"})
             rec.message_post(body="Surat Penawaran direset kembali ke **Draft**.")
+
+    def action_send_whatsapp(self):
+        """Kirim pesan dan dokumen penawaran via WhatsApp ke PIC."""
+        self.ensure_one()
+        phone = (self.pic_phone or "").strip()
+        if not phone and self.partner_id:
+            phone = (self.partner_id.mobile or self.partner_id.phone or "").strip()
+        if not phone:
+            raise ValidationError("Nomor WhatsApp/HP PIC atau Customer belum diisi!")
+
+        # Bersihkan nomor format Indonesia
+        clean_phone = "".join(filter(str.isdigit, phone))
+        if clean_phone.startswith("0"):
+            clean_phone = "62" + clean_phone[1:]
+
+        pesan = (
+            f"Yth. Bapak/Ibu *{self.pic_name or 'Customer'}* - *{self.partner_id.name}*,\n\n"
+            f"Berikut kami sampaikan Surat Penawaran Harga resmi Nomor: *{self.name}* dari PT. Aston Graphindo Indonesia.\n"
+            f"Total Penawaran: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}* (Berlaku s/d {self.validity_date or '-'}).\n\n"
+            f"Dokumen Surat Penawaran resmi terlampir. Terima kasih.\n\n"
+            f"Salam,\n*{self.user_id.name}*\nPT. Aston Graphindo Indonesia"
+        )
+
+        import urllib.parse
+        encoded_msg = urllib.parse.quote(pesan)
+        wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+
+        self.write({"state": "sent"})
+        self.message_post(body=f"💬 **Surat Penawaran Dikirim via WhatsApp** ke nomor {clean_phone} ({self.pic_name}).")
+        self._trigger_crm_p2()
+
+        return {
+            "type": "ir.actions.act_url",
+            "url": wa_url,
+            "target": "new",
+        }
+
+    def action_send_email(self):
+        """Kirim Surat Penawaran via 1 Email Bersama Kantor."""
+        self.ensure_one()
+        email_to = (self.pic_email or "").strip()
+        if not email_to and self.partner_id:
+            email_to = (self.partner_id.email or "").strip()
+        if not email_to:
+            raise ValidationError("Alamat Email PIC atau Customer belum diisi!")
+
+        company_email = self.company_id.email or "penawaran@orimax.co.id"
+        subject = f"Surat Penawaran Harga - {self.name} - {self.partner_id.name}"
+        body_html = f"""
+            <p>Yth. Bapak/Ibu <strong>{self.pic_name or 'Customer'}</strong>,</p>
+            <p>Bersama ini kami sampaikan dokumen <strong>Surat Penawaran Harga</strong> resmi dari PT. Aston Graphindo Indonesia:</p>
+            <ul>
+                <li><strong>Nomor Surat:</strong> {self.name}</li>
+                <li><strong>Instansi:</strong> {self.partner_id.name}</li>
+                <li><strong>Total Nilai:</strong> {self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}</li>
+                <li><strong>Masa Berlaku:</strong> {self.validity_date or '-'}</li>
+            </ul>
+            <p>Dokumen penawaran lengkap dapat dilihat pada lampiran PDF terlampir.</p>
+            <br/>
+            <p>Hormat kami,</p>
+            <p><strong>{self.user_id.name}</strong><br/>
+            PT. Aston Graphindo Indonesia<br/>
+            Email: {company_email}</p>
+        """
+
+        # Generate PDF report attachment
+        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+            "agi_surat_penawaran.action_report_surat_penawaran", [self.id]
+        )
+        attachment = self.env['ir.attachment'].create({
+            'name': f"Surat_Penawaran_{self.name.replace('/', '_')}.pdf",
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'res_model': 'surat.penawaran',
+            'res_id': self.id,
+            'mimetype': 'application/pdf',
+        })
+
+        mail_values = {
+            'subject': subject,
+            'body_html': body_html,
+            'email_from': f"PT. Aston Graphindo Indonesia <{company_email}>",
+            'email_to': email_to,
+            'reply_to': company_email,
+            'attachment_ids': [(4, attachment.id)],
+        }
+        mail = self.env['mail.mail'].sudo().create(mail_values)
+        mail.send()
+
+        self.write({"state": "sent"})
+        self.message_post(
+            body=f"✉️ **Surat Penawaran Dikirim via Email Bersama ({company_email})** ke alamat {email_to} (Attachment PDF terlampir)."
+        )
+        self._trigger_crm_p2()
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Email Terkirim!',
+                'message': f"Surat Penawaran berhasil dikirim ke {email_to} menggunakan email resmi kantor.",
+                'type': 'success',
+                'sticky': False,
+            }
+        }
 
     def action_print(self):
         self.ensure_one()
