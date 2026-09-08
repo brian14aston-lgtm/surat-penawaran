@@ -121,12 +121,44 @@ class SuratPenawaran(models.Model):
             rec.amount_tax = sum(rec.line_ids.mapped("price_tax"))
             rec.amount_total = rec.amount_untaxed + rec.amount_tax
 
+    def _trigger_crm_p2(self):
+        """Otomatis memicu perpindahan lead ke stage P2 (Interest) jika ada penawaran."""
+        p2_stage = self.env["crm.stage"].search([
+            "|",
+            ("name", "ilike", "P2"),
+            ("name", "ilike", "Interest")
+        ], limit=1)
+        for rec in self:
+            lead = rec.opportunity_id
+            if not lead and rec.partner_id:
+                lead = self.env["crm.lead"].search([
+                    ("partner_id", "=", rec.partner_id.id),
+                    ("type", "=", "opportunity"),
+                    ("probability", "<", 100),
+                ], limit=1)
+                if lead:
+                    rec.opportunity_id = lead.id
+
+            if lead and p2_stage:
+                current_stage_name = lead.stage_id.name or ""
+                if "P0" not in current_stage_name and "P1" not in current_stage_name:
+                    if lead.stage_id.id != p2_stage.id:
+                        lead.stage_id = p2_stage.id
+                        lead.message_post(
+                            body=f"⚡ **Otomatis Naik ke P2 (Interest)** karena Surat Penawaran resmi **{rec.name}** telah diterbitkan untuk {rec.partner_id.name} (Total: {rec.currency_id.symbol or 'Rp'} {rec.amount_total:,.2f})."
+                        )
+                if not lead.expected_revenue or lead.expected_revenue == 0:
+                    lead.expected_revenue = rec.amount_total
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get("name", "New") == "New":
                 vals["name"] = self.env["ir.sequence"].next_by_code("surat.penawaran") or "New"
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        for rec in records:
+            rec._trigger_crm_p2()
+        return records
 
     def unlink(self):
         for rec in self:
@@ -138,11 +170,13 @@ class SuratPenawaran(models.Model):
         for rec in self:
             rec.write({"state": "sent"})
             rec.message_post(body="Status diubah menjadi **Terkirim**.")
+            rec._trigger_crm_p2()
 
     def action_accept(self):
         for rec in self:
             rec.write({"state": "accepted"})
             rec.message_post(body="Status diubah menjadi **Diterima**.")
+            rec._trigger_crm_p2()
 
     def action_refuse(self):
         for rec in self:
