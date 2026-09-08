@@ -55,6 +55,12 @@ class CustomerPO(models.Model):
         required=True,
         tracking=True,
     )
+    opportunity_id = fields.Many2one(
+        "crm.lead",
+        string="Peluang / CRM Lead",
+        tracking=True,
+        help="Lead / Opportunity yang terkait dengan Form PO ini.",
+    )
     instansi_name = fields.Char(string="Nama Instansi", tracking=True)
     instansi_address = fields.Text(string="Alamat Instansi", tracking=True)
     instansi_phone = fields.Char(string="Nomer Telepon Instansi", tracking=True)

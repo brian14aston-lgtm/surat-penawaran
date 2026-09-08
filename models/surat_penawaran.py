@@ -22,6 +22,12 @@ class SuratPenawaran(models.Model):
         required=True,
         tracking=True,
     )
+    opportunity_id = fields.Many2one(
+        "crm.lead",
+        string="Peluang / CRM Lead",
+        tracking=True,
+        help="Lead / Opportunity yang terkait dengan surat penawaran ini.",
+    )
     user_id = fields.Many2one(
         "res.users",
         string="Salesperson",

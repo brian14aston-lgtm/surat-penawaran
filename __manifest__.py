@@ -13,6 +13,7 @@
         "views/surat_penawaran_views.xml",
         "views/surat_penawaran_line_views.xml",
         "views/customer_po_views.xml",
+        "views/crm_lead_views.xml",
         "report/ir_actions_report.xml",
         "report/report_surat_penawaran.xml",
         "report/report_customer_po.xml",
