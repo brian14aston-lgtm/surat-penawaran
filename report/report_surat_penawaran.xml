@@ -28,6 +28,9 @@
                                 <span t-if="doc.company_id.logo">
                                     <img t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 65px; max-width: 100%;" alt="Logo"/>
                                 </span>
+                                <span t-else="">
+                                    <img src="/web/binary/company_logo" style="max-height: 65px; max-width: 100%;" alt="Logo"/>
+                                </span>
                             </div>
                         </div>
 
