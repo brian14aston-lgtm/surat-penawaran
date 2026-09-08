@@ -271,6 +271,110 @@ class CustomerPO(models.Model):
         self._trigger_crm_p1()
         return self.env.ref("agi_surat_penawaran.action_report_customer_po").report_action(self)
 
+    def action_send_whatsapp(self):
+        """Kirim pesan Form Purchase Order via WhatsApp ke Pemesan."""
+        self.ensure_one()
+        phone = (self.signer_mobile or self.instansi_phone or "").strip()
+        if not phone and self.partner_id:
+            phone = (self.partner_id.mobile or self.partner_id.phone or "").strip()
+        if not phone:
+            raise ValidationError("Nomor WhatsApp/HP Penandatangan atau Instansi belum diisi!")
+
+        clean_phone = "".join(filter(str.isdigit, phone))
+        if clean_phone.startswith("0"):
+            clean_phone = "62" + clean_phone[1:]
+
+        po_num = self.name or "(Draft PO)"
+        pesan = (
+            f"Yth. Bapak/Ibu *{self.signer_name or 'Pemesan'}* - *{self.partner_id.name}*,\n\n"
+            f"Berikut kami sampaikan dokumen *Form Purchase Order (PO)* resmi untuk pengadaan kebutuhan kantor.\n"
+            f"Nomor PO: *{po_num}*\n"
+            f"Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*.\n\n"
+            f"Mohon untuk dapat dicek, ditandatangani, dan dikonfirmasi kembali. Terima kasih.\n\n"
+            f"Salam,\n*{self.salesperson_id.name}*\nPT. Aston Graphindo Indonesia"
+        )
+
+        import urllib.parse
+        encoded_msg = urllib.parse.quote(pesan)
+        wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+
+        self.message_post(body=f"💬 **Form PO Dikirim via WhatsApp** ke nomor {clean_phone} ({self.signer_name}).")
+        self._trigger_crm_p1()
+
+        return {
+            "type": "ir.actions.act_url",
+            "url": wa_url,
+            "target": "new",
+        }
+
+    def action_send_email(self):
+        """Kirim Form Purchase Order via 1 Email Bersama Kantor (marketing@orimax.co.id)."""
+        self.ensure_one()
+        email_to = (self.signer_email or "").strip()
+        if not email_to and self.partner_id:
+            email_to = (self.partner_id.email or "").strip()
+        if not email_to:
+            raise ValidationError("Alamat Email Penandatangan atau Instansi belum diisi!")
+
+        company_email = self.company_id.email or "marketing@orimax.co.id"
+        po_num = self.name or "Draft PO"
+        subject = f"Form Purchase Order (PO) - {po_num} - {self.partner_id.name}"
+        body_html = f"""
+            <p>Yth. Bapak/Ibu <strong>{self.signer_name or 'Pemesan'}</strong>,</p>
+            <p>Bersama ini kami lampirkan dokumen <strong>Form Purchase Order (PO)</strong> untuk pengadaan kebutuhan kantor di {self.partner_id.name}:</p>
+            <ul>
+                <li><strong>Nomor PO:</strong> {po_num}</li>
+                <li><strong>Instansi:</strong> {self.partner_id.name}</li>
+                <li><strong>Total Nilai:</strong> {self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}</li>
+            </ul>
+            <p>Dokumen Purchase Order lengkap dapat dilihat pada lampiran PDF terlampir.</p>
+            <br/>
+            <p>Hormat kami,</p>
+            <p><strong>{self.salesperson_id.name}</strong><br/>
+            PT. Aston Graphindo Indonesia<br/>
+            Email: {company_email}</p>
+        """
+
+        import base64
+        pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+            "agi_surat_penawaran.action_report_customer_po", [self.id]
+        )
+        attachment = self.env['ir.attachment'].create({
+            'name': f"Purchase_Order_{po_num.replace('/', '_')}.pdf",
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'res_model': 'customer.po',
+            'res_id': self.id,
+            'mimetype': 'application/pdf',
+        })
+
+        mail_values = {
+            'subject': subject,
+            'body_html': body_html,
+            'email_from': f"PT. Aston Graphindo Indonesia <{company_email}>",
+            'email_to': email_to,
+            'reply_to': company_email,
+            'attachment_ids': [(4, attachment.id)],
+        }
+        mail = self.env['mail.mail'].sudo().create(mail_values)
+        mail.send()
+
+        self.message_post(
+            body=f"✉️ **Form PO Dikirim via Email Bersama ({company_email})** ke alamat {email_to} (Attachment PDF terlampir)."
+        )
+        self._trigger_crm_p1()
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Email Terkirim!',
+                'message': f"Form Purchase Order berhasil dikirim ke {email_to}.",
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
     def action_confirm(self):
         self.write({"state": "confirmed"})
         self._trigger_crm_p0()

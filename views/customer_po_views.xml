@@ -7,8 +7,10 @@
         <field name="arch" type="xml">
             <form string="Form Purchase Order Customer">
                 <header>
-                    <button name="action_print" type="object" string="Cetak / Download PDF" class="btn-primary" icon="fa-print"/>
-                    <button name="action_confirm" type="object" string="Setujui / Confirm" class="btn-primary" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button name="action_send_whatsapp" type="object" string="💬 Kirim WA" class="btn-success" icon="fa-whatsapp"/>
+                    <button name="action_send_email" type="object" string="✉️ Kirim Email" class="btn-primary" icon="fa-envelope"/>
+                    <button name="action_print" type="object" string="Cetak / Download PDF" class="btn-secondary" icon="fa-print"/>
+                    <button name="action_confirm" type="object" string="Setujui / Confirm (Deal P0)" class="btn-primary" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
                     <button name="action_draft" type="object" string="Reset ke Draft" class="btn-secondary" attrs="{'invisible': [('state', '=', 'draft')]}"/>
                     <button name="action_cancel" type="object" string="Batal" class="btn-secondary" attrs="{'invisible': [('state', '=', 'cancel')]}"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
