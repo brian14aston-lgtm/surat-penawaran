@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_send_wa_wizard_form" model="ir.ui.view">
+        <field name="name">send.wa.wizard.form</field>
+        <field name="model">send.wa.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Pratinjau Pesan WhatsApp">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <strong>💡 Preview Pesan:</strong> Anda dapat memeriksa dan mengedit kalimat pesan WhatsApp di bawah ini sebelum dikirimkan ke customer.
+                    </div>
+                    <group>
+                        <group string="Tujuan Pengiriman">
+                            <field name="doc_model" invisible="1"/>
+                            <field name="doc_id" invisible="1"/>
+                            <field name="doc_name" readonly="1" string="Dokumen"/>
+                            <field name="partner_id" string="Instansi / Customer"/>
+                        </group>
+                        <group string="Kontak Penerima">
+                            <field name="recipient_name" string="Nama PIC"/>
+                            <field name="recipient_phone" string="No. WhatsApp / HP"/>
+                            <field name="attach_pdf" widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <group string="Teks Pesan WhatsApp (Dapat Diedit)">
+                        <field name="message" nolabel="1" placeholder="Tuliskan pesan WhatsApp di sini..." rows="8"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_confirm_send" string="🚀 Kirim Sekarang" type="object" class="btn-success" icon="fa-paper-plane"/>
+                    <button string="Batal" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

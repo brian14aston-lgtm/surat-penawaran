@@ -5,3 +5,4 @@ access_surat_penawaran_line,surat.penawaran.line,model_surat_penawaran_line,,1,1
 access_surat_penawaran_line_manager,surat.penawaran.line.manager,model_surat_penawaran_line,,1,1,1,1
 access_customer_po,customer.po,model_customer_po,,1,1,1,1
 access_customer_po_line,customer.po.line,model_customer_po_line,,1,1,1,1
+access_send_wa_wizard,send.wa.wizard,model_send_wa_wizard,,1,1,1,1

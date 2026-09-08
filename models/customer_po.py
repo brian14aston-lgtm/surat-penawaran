@@ -303,17 +303,11 @@ class CustomerPO(models.Model):
         return f"Terima kasih atas kepercayaan Bapak/Ibu dan seluruh jajaran di {self.partner_id.name} kepada perusahaan kami."
 
     def action_send_whatsapp(self):
-        """Kirim pesan Form Purchase Order via WhatsApp (Evolution API dengan fallback WA Web)."""
+        """Buka pop-up Wizard Pratinjau Pesan WhatsApp sebelum Form PO dikirim."""
         self.ensure_one()
         phone = (self.signer_mobile or self.instansi_phone or "").strip()
         if not phone and self.partner_id:
             phone = (self.partner_id.mobile or self.partner_id.phone or "").strip()
-        if not phone:
-            raise ValidationError("Nomor WhatsApp/HP Penandatangan atau Instansi belum diisi!")
-
-        clean_phone = "".join(filter(str.isdigit, phone))
-        if clean_phone.startswith("0"):
-            clean_phone = "62" + clean_phone[1:]
 
         po_num = self.name or "(Draft PO)"
         ai_greeting = self._generate_ai_po_greeting()
@@ -328,67 +322,23 @@ class CustomerPO(models.Model):
             f"Hormat kami,\n*{self.salesperson_id.name}*\nPT. Aston Graphindo Indonesia"
         )
 
-        # Coba kirim langsung via Evolution API jika instance ada
-        ICP = self.env['ir.config_parameter'].sudo()
-        evo_url = ICP.get_param('sirup_base.evolution_api_url')
-        evo_key = ICP.get_param('sirup_base.evolution_api_key')
-
-        sent_via_evolution = False
-        if evo_url and evo_key:
-            inst = self.env['evolution.instance'].search([('sales_id', '=', self.salesperson_id.id)], limit=1)
-            if not inst:
-                inst = self.env['evolution.instance'].search([], limit=1)
-            
-            if inst and inst.instance_name:
-                try:
-                    # A. Kirim Text
-                    send_text_url = f"{evo_url.rstrip('/')}/message/sendText/{inst.instance_name}"
-                    headers = {'apikey': evo_key, 'Content-Type': 'application/json'}
-                    requests.post(send_text_url, headers=headers, json={'number': clean_phone, 'text': pesan}, timeout=8)
-
-                    # B. Kirim Dokumen PDF
-                    pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
-                        "agi_surat_penawaran.action_report_customer_po", [self.id]
-                    )
-                    send_media_url = f"{evo_url.rstrip('/')}/message/sendMedia/{inst.instance_name}"
-                    media_data = {
-                        'number': clean_phone,
-                        'mediatype': 'document',
-                        'mimetype': 'application/pdf',
-                        'caption': f"Form Purchase Order {po_num} - PT. Aston Graphindo Indonesia",
-                        'media': base64.b64encode(pdf_content).decode('utf-8'),
-                        'fileName': f"Purchase_Order_{po_num.replace('/', '_')}.pdf"
-                    }
-                    resp_media = requests.post(send_media_url, headers=headers, json=media_data, timeout=12)
-                    if resp_media.status_code in [200, 201]:
-                        sent_via_evolution = True
-                except Exception:
-                    sent_via_evolution = False
-
-        self._trigger_crm_p1()
-
-        if sent_via_evolution:
-            self.message_post(body=f"⚡💬 **Form Purchase Order & PDF Terkirim Otomatis via Evolution API** ke nomor {clean_phone} ({self.signer_name}).")
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': 'WhatsApp Terkirim!',
-                    'message': f"Form PO & PDF berhasil dikirim langsung via WhatsApp ke {clean_phone}.",
-                    'type': 'success',
-                    'sticky': False,
-                }
-            }
-        else:
-            import urllib.parse
-            encoded_msg = urllib.parse.quote(pesan)
-            wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
-            self.message_post(body=f"💬 **Form PO Dibuka via WhatsApp Web** untuk nomor {clean_phone} ({self.signer_name}).")
-            return {
-                "type": "ir.actions.act_url",
-                "url": wa_url,
-                "target": "new",
-            }
+        return {
+            "name": "Pratinjau Pesan WhatsApp (Purchase Order)",
+            "type": "ir.actions.act_window",
+            "res_model": "send.wa.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_doc_model": "customer.po",
+                "default_doc_id": self.id,
+                "default_doc_name": po_num,
+                "default_partner_id": self.partner_id.id if self.partner_id else False,
+                "default_recipient_name": self.signer_name or (self.partner_id.name if self.partner_id else ""),
+                "default_recipient_phone": phone,
+                "default_message": pesan,
+                "default_attach_pdf": True,
+            },
+        }
 
     def action_send_email(self):
         """Kirim Form Purchase Order via 1 Email Bersama Kantor (marketing@orimax.co.id)."""
