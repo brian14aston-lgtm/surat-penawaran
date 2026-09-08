@@ -72,10 +72,9 @@ class SuratPenawaran(models.Model):
     )
     currency_id = fields.Many2one(
         "res.currency",
-        related="company_id.currency_id",
         string="Currency",
-        store=True,
-        readonly=True,
+        default=lambda self: self.env.company.currency_id,
+        required=True,
     )
     amount_untaxed = fields.Monetary(
         string="Total Sebelum Pajak",
