@@ -42,6 +42,27 @@ class SuratPenawaran(models.Model):
         tracking=True,
         help="Pilih identitas perusahaan & kop surat resmi yang digunakan untuk penawaran ini.",
     )
+    company_entity_logo = fields.Binary(
+        string="Logo Perusahaan PDF",
+        compute="_compute_company_entity_logo",
+    )
+
+    @api.depends("company_entity", "company_id")
+    def _compute_company_entity_logo(self):
+        import os
+        import base64
+        addon_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        for rec in self:
+            if rec.company_entity == "solusi_negeri":
+                logo_file = os.path.join(addon_path, "static", "description", "Logo-ASN-.jpg")
+            else:
+                logo_file = os.path.join(addon_path, "static", "description", "logo.jpg")
+
+            if os.path.exists(logo_file):
+                with open(logo_file, "rb") as f:
+                    rec.company_entity_logo = base64.b64encode(f.read())
+            else:
+                rec.company_entity_logo = rec.company_id.logo
     user_id = fields.Many2one(
         "res.users",
         string="Salesperson",

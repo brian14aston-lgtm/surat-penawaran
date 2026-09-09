@@ -41,7 +41,10 @@
                                 </div>
                             </div>
                             <div class="col-4 text-end">
-                                <span t-if="doc.company_id.logo">
+                                <span t-if="doc.company_entity_logo">
+                                    <img t-att-src="image_data_uri(doc.company_entity_logo)" style="max-height: 55px; max-width: 100%;" alt="Logo"/>
+                                </span>
+                                <span t-elif="doc.company_id.logo">
                                     <img t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 55px; max-width: 100%;" alt="Logo"/>
                                 </span>
                             </div>

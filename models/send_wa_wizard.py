@@ -83,10 +83,43 @@ class SendWaWizard(models.TransientModel):
 
         # Update status & trigger CRM
         if self.doc_model == "surat.penawaran":
-            doc.write({"state": "sent"})
+            doc.write({
+                "state": "sent",
+                "pic_phone": phone,
+            })
+            if self.recipient_name and not doc.pic_name:
+                doc.write({"pic_name": self.recipient_name})
             doc._trigger_crm_p2()
         elif self.doc_model == "customer.po":
+            doc.write({
+                "signer_mobile": phone,
+            })
+            if self.recipient_name and not doc.signer_name:
+                doc.write({"signer_name": self.recipient_name})
             doc._trigger_crm_p1()
+
+        # Sinkronisasi nomor WhatsApp kembali ke CRM Lead & Partner
+        lead = getattr(doc, 'opportunity_id', False)
+        if lead:
+            lead_vals = {}
+            if not lead.mobile or lead.mobile != phone:
+                lead_vals['mobile'] = phone
+            if not lead.phone:
+                lead_vals['phone'] = phone
+            if self.recipient_name and not lead.contact_name:
+                lead_vals['contact_name'] = self.recipient_name
+            if lead_vals:
+                lead.write(lead_vals)
+
+        partner = getattr(doc, 'partner_id', False)
+        if partner:
+            partner_vals = {}
+            if not partner.mobile or partner.mobile != phone:
+                partner_vals['mobile'] = phone
+            if not partner.phone:
+                partner_vals['phone'] = phone
+            if partner_vals:
+                partner.write(partner_vals)
 
         if sent_via_evolution:
             doc.message_post(body=f"⚡💬 **Pesan WhatsApp & Dokumen Terkirim via Evolution API** ke nomor {clean_phone} ({self.recipient_name}).")
