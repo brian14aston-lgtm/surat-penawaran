@@ -272,15 +272,16 @@ class SuratPenawaran(models.Model):
         # Generate salam sopan by AI
         ai_greeting = self._generate_ai_wa_greeting(doc_type="Surat Penawaran Harga")
 
+        comp_name = "PT. AGI Solusi Negeri" if self.company_entity == "solusi_negeri" else "PT. Aston Graphindo Indonesia"
         pesan = (
             f"Yth. Bapak/Ibu *{self.pic_name or 'Customer'}* - *{self.partner_id.name}*,\n\n"
             f"{ai_greeting}\n\n"
             f"Bersama ini kami sampaikan dokumen *Surat Penawaran Harga* resmi:\n"
             f"• Nomor Surat: *{self.name}*\n"
             f"• Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*\n"
-            f"• Masa Berlaku: *s/d {self.validity_date or '-'}*\n\n"
+            f"• Masa Berlaku: *s/d {self.validity_date or '-'}-{comp_name}*\n\n"
             f"Dokumen Surat Penawaran resmi PDF terlampir. Apabila ada hal yang perlu didiskusikan atau disesuaikan, kami siap membantu.\n\n"
-            f"Hormat kami,\n*{self.user_id.name}*\nPT. Aston Graphindo Indonesia"
+            f"Hormat kami,\n*{self.user_id.name}*\n{comp_name}"
         )
 
         return {
@@ -311,10 +312,11 @@ class SuratPenawaran(models.Model):
             raise ValidationError("Alamat Email PIC atau Customer belum diisi!")
 
         company_email = self.company_id.email or "marketing@orimax.co.id"
+        comp_name = "PT. AGI Solusi Negeri" if self.company_entity == "solusi_negeri" else "PT. Aston Graphindo Indonesia"
         subject = f"Surat Penawaran Harga - {self.name} - {self.partner_id.name}"
         body_html = f"""
             <p>Yth. Bapak/Ibu <strong>{self.pic_name or 'Customer'}</strong>,</p>
-            <p>Bersama ini kami sampaikan dokumen <strong>Surat Penawaran Harga</strong> resmi dari PT. Aston Graphindo Indonesia:</p>
+            <p>Bersama ini kami sampaikan dokumen <strong>Surat Penawaran Harga</strong> resmi dari <strong>{comp_name}</strong>:</p>
             <ul>
                 <li><strong>Nomor Surat:</strong> {self.name}</li>
                 <li><strong>Instansi:</strong> {self.partner_id.name}</li>
@@ -325,7 +327,7 @@ class SuratPenawaran(models.Model):
             <br/>
             <p>Hormat kami,</p>
             <p><strong>{self.user_id.name}</strong><br/>
-            PT. Aston Graphindo Indonesia<br/>
+            {comp_name}<br/>
             Email: {company_email}</p>
         """
 

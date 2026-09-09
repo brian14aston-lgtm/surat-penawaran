@@ -98,14 +98,12 @@ class SendWaWizard(models.TransientModel):
                 doc.write({"signer_name": self.recipient_name})
             doc._trigger_crm_p1()
 
-        # Sinkronisasi nomor WhatsApp kembali ke CRM Lead & Partner
+        # Sinkronisasi nomor WhatsApp HANYA ke field mobile (jangan sentuh field phone/telepon kantor)
         lead = getattr(doc, 'opportunity_id', False)
         if lead:
             lead_vals = {}
             if not lead.mobile or lead.mobile != phone:
                 lead_vals['mobile'] = phone
-            if not lead.phone:
-                lead_vals['phone'] = phone
             if self.recipient_name and not lead.contact_name:
                 lead_vals['contact_name'] = self.recipient_name
             if lead_vals:
@@ -116,8 +114,6 @@ class SendWaWizard(models.TransientModel):
             partner_vals = {}
             if not partner.mobile or partner.mobile != phone:
                 partner_vals['mobile'] = phone
-            if not partner.phone:
-                partner_vals['phone'] = phone
             if partner_vals:
                 partner.write(partner_vals)
 
